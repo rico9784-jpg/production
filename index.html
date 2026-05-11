@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>現場線別報工記錄工具 V2.2</title>
+<title>現場線別報工記錄工具 V2.3</title>
 <style>
   :root{
     --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d0d5dd;
@@ -53,7 +53,7 @@
 </head>
 <body>
 <header>
-  <h1>現場線別報工記錄工具 V2.2</h1>
+  <h1>現場線別報工記錄工具 V2.3</h1>
   <p>手機/平板離線可用｜記錄起訖時間（時:分）｜複製貼上 Excel｜匯出 CSV</p>
 </header>
 
@@ -183,11 +183,19 @@
       <div class="row">
         <div>
           <label>開始時間</label>
-          <input id="startTime" type="time" onchange="updateLivePph()">
+          <div class="row">
+            <select id="startHour" onchange="syncTimeFromSelect('start'); updateLivePph();"></select>
+            <select id="startMinute" onchange="syncTimeFromSelect('start'); updateLivePph();"></select>
+          </div>
+          <input id="startTime" type="hidden">
         </div>
         <div>
           <label>結束時間</label>
-          <input id="endTime" type="time" onchange="updateLivePph()">
+          <div class="row">
+            <select id="endHour" onchange="syncTimeFromSelect('end'); updateLivePph();"></select>
+            <select id="endMinute" onchange="syncTimeFromSelect('end'); updateLivePph();"></select>
+          </div>
+          <input id="endTime" type="hidden">
         </div>
       </div>
 
@@ -304,18 +312,60 @@ function hour1(n){ return (Number(n || 0)).toFixed(1); }
 function todayStr(){
   const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 }
-function timeStr(){
-  const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function roundTo6Minute(minute){
+  let m = Math.round(Number(minute || 0) / 6) * 6;
+  if(m >= 60) m = 54;
+  return m;
 }
+
+function timeStr(){
+  const d=new Date();
+  return `${pad(d.getHours())}:${pad(roundTo6Minute(d.getMinutes()))}`;
+}
+
+function initTimeSelects(){
+  const hours = Array.from({length:24}, (_,i)=>pad(i));
+  const mins = [0,6,12,18,24,30,36,42,48,54].map(pad);
+
+  ['start','end'].forEach(prefix => {
+    const h = document.getElementById(prefix + 'Hour');
+    const m = document.getElementById(prefix + 'Minute');
+    if(h) h.innerHTML = '<option value="">時</option>' + hours.map(x=>`<option value="${x}">${x}</option>`).join('');
+    if(m) m.innerHTML = '<option value="">分</option>' + mins.map(x=>`<option value="${x}">${x}</option>`).join('');
+  });
+}
+
+function syncTimeFromSelect(prefix){
+  const h = document.getElementById(prefix + 'Hour')?.value || '';
+  const m = document.getElementById(prefix + 'Minute')?.value || '';
+  const t = document.getElementById(prefix + 'Time');
+  if(!t) return;
+  t.value = (h !== '' && m !== '') ? `${h}:${m}` : '';
+}
+
+function setTimeSelect(prefix, value){
+  if(!value) return;
+  const [h, m] = value.split(':');
+  const hh = pad(Number(h));
+  const mm = pad(roundTo6Minute(Number(m)));
+  const hSel = document.getElementById(prefix + 'Hour');
+  const mSel = document.getElementById(prefix + 'Minute');
+  const t = document.getElementById(prefix + 'Time');
+  if(hSel) hSel.value = hh;
+  if(mSel) mSel.value = mm;
+  if(t) t.value = `${hh}:${mm}`;
+}
+
 function updateClock(){
-  document.getElementById('clock').textContent = timeStr();
+  const d = new Date();
+  document.getElementById('clock').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 setInterval(updateClock,1000); updateClock();
 
 document.getElementById('workDate').value = todayStr();
 
-function setStartNow(){ document.getElementById('startTime').value = timeStr(); updateLivePph(); }
-function setEndNow(){ document.getElementById('endTime').value = timeStr(); updateLivePph(); }
+function setStartNow(){ setTimeSelect('start', timeStr()); updateLivePph(); }
+function setEndNow(){ setTimeSelect('end', timeStr()); updateLivePph(); }
 
 function minutesBetween(start,end){
   if(!start || !end) return 0;
@@ -401,6 +451,10 @@ function val(id){ return document.getElementById(id).value; }
 function clearTimesOnly(){
   document.getElementById('startTime').value='';
   document.getElementById('endTime').value='';
+  document.getElementById('startHour').value='';
+  document.getElementById('startMinute').value='';
+  document.getElementById('endHour').value='';
+  document.getElementById('endMinute').value='';
   document.getElementById('qty').value='';
   document.getElementById('nonProd01').value='';
   document.getElementById('nonProdHour01').value='';
@@ -432,6 +486,10 @@ function clearForm(){
   document.getElementById('note').value='';
   document.getElementById('startTime').value='';
   document.getElementById('endTime').value='';
+  document.getElementById('startHour').value='';
+  document.getElementById('startMinute').value='';
+  document.getElementById('endHour').value='';
+  document.getElementById('endMinute').value='';
   updateLivePph();
 }
 
@@ -567,6 +625,7 @@ function clearAll(){
 
 initProductSelects();
 initReasonSelects();
+initTimeSelects();
 loadData();
 updateLivePph();
 </script>
