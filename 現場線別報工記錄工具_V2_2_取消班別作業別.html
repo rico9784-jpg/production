@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>現場線別報工記錄工具 V2.2</title>
+<style>
+  :root{
+    --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d0d5dd;
+    --primary:#2563eb;--ok:#16a34a;--warn:#f59e0b;--danger:#dc2626;--soft:#eef4ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",Arial,sans-serif;color:var(--text)}
+  header{position:sticky;top:0;z-index:2;background:#0f172a;color:#fff;padding:14px 16px}
+  header h1{margin:0;font-size:20px}
+  header p{margin:5px 0 0;color:#cbd5e1;font-size:13px}
+  main{max-width:980px;margin:auto;padding:14px}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+  .card h2{font-size:17px;margin:0 0 12px}
+  label{display:block;font-weight:700;margin:10px 0 6px;font-size:14px}
+  input,select,textarea,button{font:inherit}
+  input,select,textarea{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;
+  }
+  textarea{min-height:70px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  button{
+    border:0;border-radius:12px;padding:12px 14px;font-weight:800;cursor:pointer;background:#e5e7eb;color:#111827;
+  }
+  .primary{background:var(--primary);color:#fff}
+  .ok{background:var(--ok);color:#fff}
+  .warn{background:var(--warn);color:#111827}
+  .danger{background:var(--danger);color:#fff}
+  .ghost{background:#eef2f7;color:#111827}
+  .pill{display:inline-flex;align-items:center;border-radius:999px;background:var(--soft);color:#1d4ed8;padding:5px 10px;font-size:13px;font-weight:800}
+  .status{padding:10px;border-radius:12px;background:#f8fafc;border:1px dashed var(--line);color:var(--muted);font-size:14px}
+  table{width:100%;border-collapse:collapse;background:#fff}
+  th,td{border-bottom:1px solid #e5e7eb;padding:9px 7px;text-align:left;font-size:13px;vertical-align:top}
+  th{background:#f8fafc;position:sticky;top:68px;z-index:1}
+  .tablewrap{overflow:auto;max-height:430px;border:1px solid var(--line);border-radius:14px}
+  .small{font-size:12px;color:var(--muted);line-height:1.45}
+  .bigtime{font-size:28px;font-weight:900;letter-spacing:.5px}
+  .hidden{display:none}
+  @media(max-width:760px){
+    .grid{grid-template-columns:1fr}
+    .row{grid-template-columns:1fr}
+    th,td{white-space:nowrap}
+    header h1{font-size:18px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>現場線別報工記錄工具 V2.2</h1>
+  <p>手機/平板離線可用｜記錄起訖時間（時:分）｜複製貼上 Excel｜匯出 CSV</p>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>1. 基本資料</h2>
+      <label>作業日期</label>
+      <input id="workDate" type="date">
+
+      <label>線別</label>
+      <select id="line">
+        <option>B1</option><option>B2</option><option>F1</option><option>F2</option>
+        <option>E1</option><option>E2</option><option>D1</option>
+        <option>S1</option><option>S2</option><option>C1</option>
+        <option>SGK1</option><option>SGK2</option><option>GOS4</option><option>GOS5</option>
+        <option>圓型</option><option>其他</option>
+      </select>
+
+      <div class="row">
+        <div>
+          <label>類別</label>
+          <select id="category" onchange="updateProductOptions()">
+            <option value="">請選擇類別</option>
+          </select>
+        </div>
+        <div>
+          <label>品名</label>
+          <select id="product">
+            <option value="">請先選擇類別</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>人數</label>
+          <input id="people" type="number" min="0" step="1" placeholder="例：8" oninput="updateLivePph()">
+        </div>
+        <div>
+          <label>生產數量</label>
+          <input id="qty" type="number" min="0" step="1" placeholder="例：1200" oninput="updateLivePph()">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>課務</label>
+          <select id="task">
+            <option selected>N</option>
+            <option>Y</option>
+          </select>
+        </div>
+        <div>
+          <label>加班</label>
+          <select id="overtime">
+            <option selected>N</option>
+            <option>Y</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>機器數量</label>
+          <input id="machineQty" type="number" min="0" step="1" value="1" placeholder="例：1">
+        </div>
+        <div>
+          <label>說明</label>
+          <input value="機器/生產工時由起訖相減" disabled>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>非生產01</label>
+          <select id="nonProd01" onchange="updateReasonDesc(1)">
+            <option value="">請選擇原因碼</option>
+          </select>
+          <div class="small" id="nonProdDesc01" style="margin-top:6px;color:#475467;">說明：未選擇</div>
+        </div>
+        <div>
+          <label>工時01</label>
+          <input id="nonProdHour01" type="number" min="0" step="0.01" placeholder="例：0.5">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>非生產02</label>
+          <select id="nonProd02" onchange="updateReasonDesc(2)">
+            <option value="">請選擇原因碼</option>
+          </select>
+          <div class="small" id="nonProdDesc02" style="margin-top:6px;color:#475467;">說明：未選擇</div>
+        </div>
+        <div>
+          <label>工時02</label>
+          <input id="nonProdHour02" type="number" min="0" step="0.01" placeholder="例：0.25">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>非生產03</label>
+          <select id="nonProd03" onchange="updateReasonDesc(3)">
+            <option value="">請選擇原因碼</option>
+          </select>
+          <div class="small" id="nonProdDesc03" style="margin-top:6px;color:#475467;">說明：未選擇</div>
+        </div>
+        <div>
+          <label>工時03</label>
+          <input id="nonProdHour03" type="number" min="0" step="0.01" placeholder="例：0.1">
+        </div>
+      </div>
+
+      <label>備註</label>
+      <textarea id="note" placeholder="例：膜位調整、待飯、標籤機卡標、缺料等"></textarea>
+    </section>
+
+    <section class="card">
+      <h2>2. 時間記錄</h2>
+      <div class="status">
+        目前時間<br>
+        <span class="bigtime" id="clock">--:--:--</span>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>開始時間</label>
+          <input id="startTime" type="time" onchange="updateLivePph()">
+        </div>
+        <div>
+          <label>結束時間</label>
+          <input id="endTime" type="time" onchange="updateLivePph()">
+        </div>
+      </div>
+
+      <div class="status" id="livePphBox" style="margin-top:12px;">
+        即時人均：請輸入人數、生產數量，並按開始/結束。
+      </div>
+
+      <div class="btns">
+        <button class="ok" onclick="setStartNow()">開始</button>
+        <button class="warn" onclick="setEndNow()">結束</button>
+        <button class="primary" onclick="addRecord()">新增一筆</button>
+        <button class="ghost" onclick="clearForm()">清空輸入</button>
+      </div>
+
+      <p class="small">
+        操作方式：先選線別、類別、品名 → 按「開始」→ 作業完成按「結束」→ 輸入數量/人數 → 新增一筆。
+      </p>
+
+      <div class="status" id="summaryBox">
+        今日尚未新增資料。
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:12px">
+    <h2>3. 報工資料</h2>
+    <div class="btns">
+      <button class="primary" onclick="copyExcel()">複製 Excel 貼上格式</button>
+      <button class="ok" onclick="downloadCsv()">匯出 CSV</button>
+      <button class="ghost" onclick="saveData()">儲存到手機</button>
+      <button class="ghost" onclick="loadData()">讀取手機資料</button>
+      <button class="danger" onclick="clearAll()">全部清除</button>
+    </div>
+    <p class="small">
+      「複製 Excel 貼上格式」會複製 Tab 分隔資料，可直接貼到 Excel。CSV 可用 Excel 開啟。
+    </p>
+    <div class="tablewrap">
+      <table id="recordTable">
+        <thead>
+          <tr>
+            <th>#</th><th>日期</th><th>品名</th><th>人數</th><th>生產數量</th>
+            <th>課務</th><th>加班</th><th>機器數量</th><th>機器工時</th><th>生產工時</th>
+            <th>非生產01</th><th>工時01</th><th>非生產02</th><th>工時02</th><th>非生產03</th><th>工時03</th><th>工時</th><th>起</th><th>訖</th><th>人均</th><th>備註</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+let records = [];
+
+const productMaster = [{"category": "三角飯糰", "name": "雙蔬鮪魚飯糰"}, {"category": "三角飯糰", "name": "(金馬)雙蔬鮪魚飯糰"}, {"category": "三角飯糰", "name": "林聰明-雞肉飯飯糰"}, {"category": "三角飯糰", "name": "(金馬)林聰明-雞肉飯飯糰"}, {"category": "三角飯糰", "name": "御選肉鬆飯糰"}, {"category": "三角飯糰", "name": "(金馬)御選肉鬆飯糰"}, {"category": "三角飯糰", "name": "櫸木燻雞風味飯糰"}, {"category": "三角飯糰", "name": "(金馬)櫸木燻雞風味飯糰"}, {"category": "三角飯糰", "name": "炭火燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)炭火燒肉飯糰"}, {"category": "三角飯糰", "name": "韓式燒肉泡菜飯糰"}, {"category": "三角飯糰", "name": "炙烤鹽蔥燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)炙烤鹽蔥燒肉飯糰"}, {"category": "三角飯糰", "name": "魚卵龍蝦風味沙拉飯糰盲盒"}, {"category": "三角飯糰", "name": "(金馬)魚卵龍蝦風味沙拉飯糰盲盒"}, {"category": "三角飯糰", "name": "新極上飯糰-煙燻銀鮭"}, {"category": "三角飯糰", "name": "宗家府泡菜燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)宗家府泡菜燒肉飯糰"}, {"category": "三角飯糰", "name": "哇沙米鮭魚飯糰"}, {"category": "三角飯糰", "name": "(金馬)哇沙米鮭魚飯糰"}, {"category": "三角飯糰", "name": "新極上飯糰-XO醬珠貝"}, {"category": "三角飯糰", "name": "星級饗宴-晶英三杯蛤蠣飯糰"}, {"category": "三角飯糰", "name": "(金馬)晶英三杯蛤蠣飯糰"}, {"category": "三角飯糰", "name": "米香-鹹酥蝦飯糰"}, {"category": "三角飯糰", "name": "(金馬)米香-鹹酥蝦飯糰"}, {"category": "三角飯糰", "name": "新極上飯糰-熟成明太子鮭魚"}, {"category": "三角飯糰", "name": "(金)新極上飯糰-熟成明太子鮭魚"}, {"category": "三角飯糰", "name": "新極上飯糰-天使紅蝦"}, {"category": "三角飯糰", "name": "(金馬)新極上飯糰-天使紅蝦"}, {"category": "三角飯糰", "name": "新極上飯糰-蔥鹽生鮭"}, {"category": "三角飯糰", "name": "(金馬)新極上飯糰-蔥鹽生鮭"}, {"category": "三角飯糰", "name": "(區)新極上飯糰-冠軍烏魚子"}, {"category": "圓形", "name": "石安牧場溏心蛋飯糰(圓)"}, {"category": "圓形", "name": "(金馬)石安牧場溏心蛋飯糰(圓)"}, {"category": "圓形", "name": "炙燒明太子鮭魚飯糰(圓)"}, {"category": "壽司手卷", "name": "鮪魚肉鬆雙手卷"}, {"category": "壽司手卷", "name": "(金馬)鮪魚肉鬆雙手卷"}, {"category": "壽司手卷", "name": "阿拉斯加秋鮭鮪魚雙手卷"}, {"category": "壽司手卷", "name": "(金馬)阿拉斯加秋鮭鮪魚雙手卷"}, {"category": "壽司手卷", "name": "晶英-南蠻炸雞雙享壽司"}, {"category": "壽司手卷", "name": "(金馬)晶英-南蠻炸雞雙享壽司"}, {"category": "壽司手卷", "name": "日本豆皮壽司"}, {"category": "壽司手卷", "name": "(金馬)日本豆皮壽司"}, {"category": "壽司手卷", "name": "生鮭夾心壽司"}, {"category": "台式飯糰", "name": "星級饗宴-麻油雞飯糰"}, {"category": "台式飯糰", "name": "(金馬)星級饗宴-麻油雞飯糰"}, {"category": "台式飯糰", "name": "阜杭豆漿-經典飯糰"}, {"category": "台式飯糰", "name": "(金馬)阜杭豆漿-經典飯糰"}, {"category": "台式飯糰", "name": "米香-麻油雞雙菇飯糰"}, {"category": "台式飯糰", "name": "阜杭豆漿-里肌肉蛋紫米飯糰"}, {"category": "台式飯糰", "name": "(金)阜杭豆漿-里肌肉蛋紫米飯糰"}, {"category": "握便當", "name": "握便當-豪華秘製雙拼"}, {"category": "握便當", "name": "(金馬)握便當-豪華秘製雙拼"}, {"category": "握便當", "name": "晶華-四起司香草烤雞握便當"}, {"category": "握便當", "name": "(金馬)晶華-四起司香草烤雞握便當"}, {"category": "三明治", "name": "(區)雙倍起司火腿蛋三明治"}, {"category": "三明治", "name": "醬燒烤雞溏心蛋三明治"}, {"category": "三明治", "name": "溏心蛋紐奧良風味烤雞三明治"}, {"category": "三明治", "name": "金黃起司火腿蛋三明治"}, {"category": "三明治", "name": "日式雞蛋沙拉三明治"}, {"category": "三明治", "name": "燻雞菇菇彩蔬三明治"}, {"category": "漢堡", "name": "吉士豬肉堡加蛋"}, {"category": "漢堡", "name": "花生熔岩辣雞腿堡"}, {"category": "漢堡", "name": "牛肉起司堡"}, {"category": "漢堡", "name": "塔塔香炸鱈魚堡"}, {"category": "漢堡", "name": "雙層吉士豬肉堡加蛋"}, {"category": "捲餅", "name": "四起司燻腸捲餅"}, {"category": "便當燴飯", "name": "牛角-炙燒雙拼便當"}, {"category": "便當燴飯", "name": "(離)牛角-炙燒雙拼便當"}, {"category": "便當燴飯", "name": "日式佛蒙特咖哩雞肉飯"}, {"category": "便當燴飯", "name": "(離)日式佛蒙特咖哩雞肉飯"}, {"category": "便當燴飯", "name": "三起司肉醬焗飯"}, {"category": "便當燴飯", "name": "(離)三起司肉醬焗飯"}, {"category": "便當燴飯", "name": "晶華-府城肉燥厚切排骨飯"}, {"category": "便當燴飯", "name": "(離)晶華-府城肉燥厚切排骨飯"}, {"category": "便當燴飯", "name": "晶華-香烤魚排青醬燉飯"}, {"category": "便當燴飯", "name": "(離)晶華-香烤魚排青醬燉飯"}, {"category": "便當燴飯", "name": "歐姆蛋包飯"}, {"category": "便當燴飯", "name": "富錦樹-剝皮辣蝦滑蛋燴飯"}, {"category": "便當燴飯", "name": "極饗-奮起湖秘製滷排"}, {"category": "便當燴飯", "name": "(離)極饗-奮起湖秘製滷排"}, {"category": "便當燴飯", "name": "豆酥烤魚鮮蔬餐盒"}, {"category": "便當燴飯", "name": "(離)豆酥烤魚鮮蔬餐盒"}, {"category": "便當燴飯", "name": "極饗-真飽米糕炊粉大雙拼"}, {"category": "便當燴飯", "name": "(離)極饗-真飽米糕炊粉大雙拼"}];
+const productCategories = ["三角飯糰", "圓形", "壽司手卷", "台式飯糰", "握便當", "三明治", "漢堡", "捲餅", "便當燴飯"];
+
+function initProductSelects(){
+  const catSel = document.getElementById('category');
+  if(!catSel) return;
+  catSel.innerHTML = '<option value="">請選擇類別</option>' + productCategories.map(c =>
+    `<option value="${escAttr(c)}">${esc(c)}</option>`
+  ).join('');
+  updateProductOptions();
+}
+
+function updateProductOptions(){
+  const cat = document.getElementById('category')?.value || '';
+  const prodSel = document.getElementById('product');
+  if(!prodSel) return;
+  const current = prodSel.value;
+  const list = productMaster.filter(p => p.category === cat);
+  if(!cat){
+    prodSel.innerHTML = '<option value="">請先選擇類別</option>';
+    return;
+  }
+  prodSel.innerHTML = '<option value="">請選擇品名</option>' + list.map(p =>
+    `<option value="${escAttr(p.name)}">${esc(p.name)}</option>`
+  ).join('');
+  if(list.some(p => p.name === current)) prodSel.value = current;
+}
+
+const reasonCodes = [{"code": "236", "desc": "加工工時"}, {"code": "A00", "desc": "A類總工時"}, {"code": "A04", "desc": "成品移倉"}, {"code": "D01", "desc": "分攤起班準備_上班前"}, {"code": "D04", "desc": "結線清機_下班前"}, {"code": "D09", "desc": "生產備料"}, {"code": "E04", "desc": "試製(產)"}, {"code": "F01", "desc": "教育訓練_新人教育訓練"}, {"code": "F04", "desc": "整理整頓"}, {"code": "F10", "desc": "教育訓練_在職教育訓練"}, {"code": "F11", "desc": "開會"}, {"code": "F13", "desc": "跨廠支援"}, {"code": "F15", "desc": "支援/其他"}, {"code": "F19", "desc": "生產帶線"}, {"code": "B03", "desc": "重修品質異常產出"}, {"code": "C01", "desc": "等待前製程來料"}, {"code": "C02", "desc": "機故(已驗收設備)"}, {"code": "E01", "desc": "機故_非操作因素"}, {"code": "E05", "desc": "製程停頓(機故)(閒置)"}];
+
+function initReasonSelects(){
+  [1,2,3].forEach(n => {
+    const id = 'nonProd0' + n;
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">請選擇原因碼</option>' + reasonCodes.map(r => 
+      `<option value="${escAttr(r.code)}">${esc(r.code)}｜${esc(r.desc)} </option>`
+    ).join('');
+    sel.value = current;
+    updateReasonDesc(n);
+  });
+}
+
+function updateReasonDesc(n){
+  const id = 'nonProd0' + n;
+  const descId = 'nonProdDesc0' + n;
+  const code = document.getElementById(id)?.value || '';
+  const item = reasonCodes.find(r => r.code === code);
+  const descEl = document.getElementById(descId);
+  if(descEl) descEl.textContent = item ? '說明：' + item.desc : '說明：未選擇';
+}
+
+function escAttr(s){
+  return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function pad(n){return String(n).padStart(2,'0')}
+function hour1(n){ return (Number(n || 0)).toFixed(1); }
+function todayStr(){
+  const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function timeStr(){
+  const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function updateClock(){
+  document.getElementById('clock').textContent = timeStr();
+}
+setInterval(updateClock,1000); updateClock();
+
+document.getElementById('workDate').value = todayStr();
+
+function setStartNow(){ document.getElementById('startTime').value = timeStr(); updateLivePph(); }
+function setEndNow(){ document.getElementById('endTime').value = timeStr(); updateLivePph(); }
+
+function minutesBetween(start,end){
+  if(!start || !end) return 0;
+  const [sh,sm]=start.split(':').map(Number);
+  const [eh,em]=end.split(':').map(Number);
+  let s=sh*60+sm, e=eh*60+em;
+  if(e < s) e += 24*60; // 跨日
+  return e-s;
+}
+
+function updateLivePph(){
+  const start = val('startTime');
+  const end = val('endTime');
+  const people = Number(val('people') || 0);
+  const qty = Number(val('qty') || 0);
+  const box = document.getElementById('livePphBox');
+  if(!box) return;
+
+  if(!start || !end){
+    box.innerHTML = '即時人均：請先按開始與結束。';
+    return;
+  }
+
+  const mins = minutesBetween(start, end);
+  const hour = Math.round((mins / 60) * 10) / 10;
+
+  if(mins <= 0){
+    box.innerHTML = '<b style="color:#dc2626;">即時人均：時間異常</b><br>請確認開始與結束時間。';
+    return;
+  }
+
+  if(people <= 0 || qty <= 0){
+    box.innerHTML = `即時人均：待計算<br>作業時間：${mins} 分鐘（${hour} 小時）｜請確認人數與生產數量。`;
+    return;
+  }
+
+  const pph = Math.round((qty / (people * (mins / 60))) * 10) / 10;
+  let warn = '';
+  if(pph <= 0){
+    warn = '<br><b style="color:#dc2626;">提醒：人均為 0，請確認資料。</b>';
+  }else if(pph > 1000){
+    warn = '<br><b style="color:#dc2626;">提醒：人均偏高，請確認人數、數量或時間是否輸入錯誤。</b>';
+  }else if(pph < 50){
+    warn = '<br><b style="color:#f59e0b;">提醒：人均偏低，請確認是否為非生產或資料輸入錯誤。</b>';
+  }
+
+  box.innerHTML = `<b style="font-size:20px;color:#1d4ed8;">即時人均：${pph} PCS/H</b><br>作業時間：${mins} 分鐘（${hour} 小時）｜生產數量：${qty}｜人數：${people}${warn}`;
+}
+
+function addRecord(){
+  const workDate = val('workDate'), line=val('line');
+  const category=val('category'), product=val('product').trim(), start=val('startTime'), end=val('endTime');
+  const people=Number(val('people')||0), qty=Number(val('qty')||0), note=val('note').trim();
+  const task=val('task') || 'N', overtime=val('overtime') || 'N', machineQty=Number(val('machineQty')||1);
+  const nonProd01=val('nonProd01').trim(), nonProdHour01=Number(val('nonProdHour01')||0);
+  const nonProd02=val('nonProd02').trim(), nonProdHour02=Number(val('nonProdHour02')||0);
+  const nonProd03=val('nonProd03').trim(), nonProdHour03=Number(val('nonProdHour03')||0);
+
+  if(!workDate || !line || !start || !end){
+    alert('請確認：日期、線別、開始時間、結束時間都已填寫。');
+    return;
+  }
+  const mins = minutesBetween(start,end);
+  const hour = Math.round((mins/60)*10)/10;
+  const manHour = Math.round(hour*people*10)/10;
+  const machineHour = hour;
+  const productionHour = hour;
+  const nonProduction01 = nonProd01;
+  const pph = (people>0 && hour>0 && qty>0) ? Math.round((qty/(people*hour))*10)/10 : '';
+
+  records.push({
+    workDate,line,category,product,people,qty,task,overtime,machineQty,
+    machineHour,productionHour,nonProduction01,nonProdHour01,nonProd02,nonProdHour02,nonProd03,nonProdHour03,
+    manHour,start,end,pph,note,mins,hour
+  });
+  saveData(false);
+  render();
+  clearTimesOnly();
+}
+
+function val(id){ return document.getElementById(id).value; }
+
+function clearTimesOnly(){
+  document.getElementById('startTime').value='';
+  document.getElementById('endTime').value='';
+  document.getElementById('qty').value='';
+  document.getElementById('nonProd01').value='';
+  document.getElementById('nonProdHour01').value='';
+  document.getElementById('nonProd02').value='';
+  document.getElementById('nonProdHour02').value='';
+  document.getElementById('nonProd03').value='';
+  document.getElementById('nonProdHour03').value='';
+  updateReasonDesc(1); updateReasonDesc(2); updateReasonDesc(3);
+  document.getElementById('note').value='';
+  updateLivePph();
+}
+
+function clearForm(){
+  document.getElementById('category').value='';
+  updateProductOptions();
+  document.getElementById('product').value='';
+  document.getElementById('people').value='';
+  document.getElementById('qty').value='';
+  document.getElementById('task').value='N';
+  document.getElementById('overtime').value='N';
+  document.getElementById('machineQty').value='1';
+  document.getElementById('nonProd01').value='';
+  document.getElementById('nonProdHour01').value='';
+  document.getElementById('nonProd02').value='';
+  document.getElementById('nonProdHour02').value='';
+  document.getElementById('nonProd03').value='';
+  document.getElementById('nonProdHour03').value='';
+  updateReasonDesc(1); updateReasonDesc(2); updateReasonDesc(3);
+  document.getElementById('note').value='';
+  document.getElementById('startTime').value='';
+  document.getElementById('endTime').value='';
+  updateLivePph();
+}
+
+function render(){
+  const tbody=document.querySelector('#recordTable tbody');
+  tbody.innerHTML='';
+  records.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td><td>${esc(r.workDate)}</td><td>${esc(r.product)}</td>
+      <td>${r.people ?? ''}</td><td>${r.qty ?? ''}</td><td>${esc(r.task || 'N')}</td><td>${esc(r.overtime || 'N')}</td>
+      <td>${r.machineQty ?? ''}</td><td>${hour1(r.machineHour)}</td><td>${hour1(r.productionHour)}</td>
+      <td>${esc(r.nonProduction01 || '')}</td><td>${r.nonProdHour01 ?? ''}</td><td>${esc(r.nonProd02 || '')}</td><td>${r.nonProdHour02 ?? ''}</td><td>${esc(r.nonProd03 || '')}</td><td>${r.nonProdHour03 ?? ''}</td><td>${r.manHour ?? ''}</td><td>${esc(r.start)}</td><td>${esc(r.end)}</td><td>${r.pph ?? ''}</td>
+      <td>${esc(r.note)}</td>
+      <td><button class="danger" onclick="deleteRecord(${i})">刪除</button></td>`;
+    tbody.appendChild(tr);
+  });
+  updateSummary();
+}
+
+function updateSummary(){
+  const box=document.getElementById('summaryBox');
+  if(records.length===0){ box.textContent='今日尚未新增資料。'; return; }
+  const totalMins=records.reduce((a,r)=>a+Number(r.mins||0),0);
+  const totalQty=records.reduce((a,r)=>a+Number(r.qty||0),0);
+  const totalManHour=records.reduce((a,r)=>a+Number(r.manHour||0),0);
+  box.innerHTML = `
+    <span class="pill">已記錄 ${records.length} 筆</span><br><br>
+    總工時：${totalMins} 分鐘｜總生產數量：${totalQty}｜總人時：${Math.round(totalManHour*100)/100}
+  `;
+}
+
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function deleteRecord(i){
+  if(confirm('確定刪除此筆資料？')){
+    records.splice(i,1); saveData(false); render();
+  }
+}
+
+function headers(){
+  return ['日期','品名','人數','生產數量','課務','加班','機器數量','機器工時','生產工時','非生產01','工時01','非生產02','工時02','非生產03','工時03','工時','起','訖','人均'];
+}
+function rowArray(r){
+  return [
+    r.workDate, r.product, r.people, r.qty,
+    r.task || 'N', r.overtime || 'N', r.machineQty || '',
+    hour1(r.machineHour), hour1(r.productionHour),
+    r.nonProduction01 || '', r.nonProdHour01 || '',
+    r.nonProd02 || '', r.nonProdHour02 || '',
+    r.nonProd03 || '', r.nonProdHour03 || '',
+    r.manHour || '', r.start, r.end, r.pph || ''
+  ];
+}
+
+async function copyExcel(){
+  if(records.length===0){ alert('目前沒有資料可複製。'); return; }
+  const text = [headers(), ...records.map(rowArray)]
+    .map(row => row.map(x => String(x ?? '').replace(/\t/g,' ').replace(/\n/g,' ')).join('\t'))
+    .join('\n');
+  try{
+    await navigator.clipboard.writeText(text);
+    alert('已複製，可直接到 Excel 貼上。');
+  }catch(e){
+    prompt('瀏覽器不允許自動複製，請手動複製以下內容：', text);
+  }
+}
+
+function downloadCsv(){
+  if(records.length===0){ alert('目前沒有資料可匯出。'); return; }
+  const csv = '\ufeff' + [headers(), ...records.map(rowArray)]
+    .map(row => row.map(csvCell).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  const date = document.getElementById('workDate').value || todayStr();
+  a.href=URL.createObjectURL(blob);
+  a.download=`線別報工_${date}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function csvCell(v){
+  const s=String(v ?? '');
+  return `"${s.replace(/"/g,'""')}"`;
+}
+
+function saveData(showAlert=true){
+  localStorage.setItem('lineWorkRecordsV1', JSON.stringify(records));
+  if(showAlert) alert('已儲存到此手機/平板瀏覽器。');
+}
+function loadData(){
+  try{
+    records = JSON.parse(localStorage.getItem('lineWorkRecordsV1') || '[]');
+    records = records.map(normalizeRecord);
+    render();
+    alert('已讀取手機/平板資料。');
+  }catch(e){
+    alert('讀取失敗。');
+  }
+}
+
+function normalizeRecord(r){
+  const mins = Number(r.mins || minutesBetween(r.start, r.end) || 0);
+  const hour = Number(r.hour || Math.round((mins/60)*10)/10);
+  const people = Number(r.people || 0);
+  const qty = Number(r.qty || 0);
+  const machineQty = Number(r.machineQty || 0);
+  return {
+    ...r,
+    task: (r.task === 'Y' || r.task === '是') ? 'Y' : 'N',
+    overtime: (r.overtime === 'Y' || r.overtime === '是') ? 'Y' : 'N',
+    machineQty,
+    machineHour: hour,
+    productionHour: hour,
+    nonProduction01: r.nonProduction01 ?? '',
+    nonProdHour01: r.nonProdHour01 ?? '',
+    nonProd02: r.nonProd02 ?? '',
+    nonProdHour02: r.nonProdHour02 ?? '',
+    nonProd03: r.nonProd03 ?? '',
+    nonProdHour03: r.nonProdHour03 ?? '',
+    manHour: r.manHour ?? Math.round(hour*people*10)/10,
+    pph: r.pph ?? ((people>0 && hour>0 && qty>0) ? Math.round((qty/(people*hour))*10)/10 : ''),
+    mins,
+    hour
+  };
+}
+function clearAll(){
+  if(confirm('確定清除全部報工資料？建議先匯出或複製到 Excel。')){
+    records=[]; saveData(false); render();
+  }
+}
+
+initProductSelects();
+initReasonSelects();
+loadData();
+updateLivePph();
+</script>
+</body>
+</html>
