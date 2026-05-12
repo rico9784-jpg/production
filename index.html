@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>現場線別報工記錄工具 V2.3</title>
+<title>現場線別報工記錄工具 V2.9</title>
 <style>
   :root{
     --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d0d5dd;
@@ -53,7 +53,7 @@
 </head>
 <body>
 <header>
-  <h1>現場線別報工記錄工具 V2.3</h1>
+  <h1>現場線別報工記錄工具 V2.9</h1>
   <p>手機/平板離線可用｜記錄起訖時間（時:分）｜複製貼上 Excel｜匯出 CSV</p>
 </header>
 
@@ -82,20 +82,10 @@
         </div>
         <div>
           <label>品名</label>
-          <select id="product">
+          <select id="product" onchange="toggleCustomProduct()">
             <option value="">請先選擇類別</option>
           </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>人數</label>
-          <input id="people" type="number" min="0" step="1" placeholder="例：8" oninput="updateLivePph()">
-        </div>
-        <div>
-          <label>生產數量</label>
-          <input id="qty" type="number" min="0" step="1" placeholder="例：1200" oninput="updateLivePph()">
+          <input id="customProduct" class="hidden" style="margin-top:8px;" placeholder="請輸入自訂品名">
         </div>
       </div>
 
@@ -182,7 +172,7 @@
 
       <div class="row">
         <div>
-          <label>開始時間</label>
+          <label>開始時間（24小時制）</label>
           <div class="row">
             <select id="startHour" onchange="syncTimeFromSelect('start'); updateLivePph();"></select>
             <select id="startMinute" onchange="syncTimeFromSelect('start'); updateLivePph();"></select>
@@ -190,7 +180,7 @@
           <input id="startTime" type="hidden">
         </div>
         <div>
-          <label>結束時間</label>
+          <label>結束時間（24小時制）</label>
           <div class="row">
             <select id="endHour" onchange="syncTimeFromSelect('end'); updateLivePph();"></select>
             <select id="endMinute" onchange="syncTimeFromSelect('end'); updateLivePph();"></select>
@@ -199,8 +189,19 @@
         </div>
       </div>
 
+      <div class="row">
+        <div>
+          <label>人數</label>
+          <input id="people" type="number" min="0" step="1" placeholder="例：8" oninput="updateLivePph()">
+        </div>
+        <div>
+          <label>生產數量</label>
+          <input id="qty" type="number" min="0" step="1" placeholder="例：1200" oninput="updateLivePph()">
+        </div>
+      </div>
+
       <div class="status" id="livePphBox" style="margin-top:12px;">
-        即時人均：請輸入人數、生產數量，並按開始/結束。
+        即時每小時產能：請輸入生產數量，並按開始/結束。
       </div>
 
       <div class="btns">
@@ -238,7 +239,7 @@
           <tr>
             <th>#</th><th>日期</th><th>品名</th><th>人數</th><th>生產數量</th>
             <th>課務</th><th>加班</th><th>機器數量</th><th>機器工時</th><th>生產工時</th>
-            <th>非生產01</th><th>工時01</th><th>非生產02</th><th>工時02</th><th>非生產03</th><th>工時03</th><th>工時</th><th>起</th><th>訖</th><th>人均</th><th>備註</th><th>操作</th>
+            <th>非生產01</th><th>工時01</th><th>非生產02</th><th>工時02</th><th>非生產03</th><th>工時03</th><th>工時</th><th>起</th><th>訖</th><th>產能</th><th>人均</th><th>備註</th><th>操作</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -250,7 +251,7 @@
 <script>
 let records = [];
 
-const productMaster = [{"category": "三角飯糰", "name": "雙蔬鮪魚飯糰"}, {"category": "三角飯糰", "name": "(金馬)雙蔬鮪魚飯糰"}, {"category": "三角飯糰", "name": "林聰明-雞肉飯飯糰"}, {"category": "三角飯糰", "name": "(金馬)林聰明-雞肉飯飯糰"}, {"category": "三角飯糰", "name": "御選肉鬆飯糰"}, {"category": "三角飯糰", "name": "(金馬)御選肉鬆飯糰"}, {"category": "三角飯糰", "name": "櫸木燻雞風味飯糰"}, {"category": "三角飯糰", "name": "(金馬)櫸木燻雞風味飯糰"}, {"category": "三角飯糰", "name": "炭火燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)炭火燒肉飯糰"}, {"category": "三角飯糰", "name": "韓式燒肉泡菜飯糰"}, {"category": "三角飯糰", "name": "炙烤鹽蔥燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)炙烤鹽蔥燒肉飯糰"}, {"category": "三角飯糰", "name": "魚卵龍蝦風味沙拉飯糰盲盒"}, {"category": "三角飯糰", "name": "(金馬)魚卵龍蝦風味沙拉飯糰盲盒"}, {"category": "三角飯糰", "name": "新極上飯糰-煙燻銀鮭"}, {"category": "三角飯糰", "name": "宗家府泡菜燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)宗家府泡菜燒肉飯糰"}, {"category": "三角飯糰", "name": "哇沙米鮭魚飯糰"}, {"category": "三角飯糰", "name": "(金馬)哇沙米鮭魚飯糰"}, {"category": "三角飯糰", "name": "新極上飯糰-XO醬珠貝"}, {"category": "三角飯糰", "name": "星級饗宴-晶英三杯蛤蠣飯糰"}, {"category": "三角飯糰", "name": "(金馬)晶英三杯蛤蠣飯糰"}, {"category": "三角飯糰", "name": "米香-鹹酥蝦飯糰"}, {"category": "三角飯糰", "name": "(金馬)米香-鹹酥蝦飯糰"}, {"category": "三角飯糰", "name": "新極上飯糰-熟成明太子鮭魚"}, {"category": "三角飯糰", "name": "(金)新極上飯糰-熟成明太子鮭魚"}, {"category": "三角飯糰", "name": "新極上飯糰-天使紅蝦"}, {"category": "三角飯糰", "name": "(金馬)新極上飯糰-天使紅蝦"}, {"category": "三角飯糰", "name": "新極上飯糰-蔥鹽生鮭"}, {"category": "三角飯糰", "name": "(金馬)新極上飯糰-蔥鹽生鮭"}, {"category": "三角飯糰", "name": "(區)新極上飯糰-冠軍烏魚子"}, {"category": "圓形", "name": "石安牧場溏心蛋飯糰(圓)"}, {"category": "圓形", "name": "(金馬)石安牧場溏心蛋飯糰(圓)"}, {"category": "圓形", "name": "炙燒明太子鮭魚飯糰(圓)"}, {"category": "壽司手卷", "name": "鮪魚肉鬆雙手卷"}, {"category": "壽司手卷", "name": "(金馬)鮪魚肉鬆雙手卷"}, {"category": "壽司手卷", "name": "阿拉斯加秋鮭鮪魚雙手卷"}, {"category": "壽司手卷", "name": "(金馬)阿拉斯加秋鮭鮪魚雙手卷"}, {"category": "壽司手卷", "name": "晶英-南蠻炸雞雙享壽司"}, {"category": "壽司手卷", "name": "(金馬)晶英-南蠻炸雞雙享壽司"}, {"category": "壽司手卷", "name": "日本豆皮壽司"}, {"category": "壽司手卷", "name": "(金馬)日本豆皮壽司"}, {"category": "壽司手卷", "name": "生鮭夾心壽司"}, {"category": "台式飯糰", "name": "星級饗宴-麻油雞飯糰"}, {"category": "台式飯糰", "name": "(金馬)星級饗宴-麻油雞飯糰"}, {"category": "台式飯糰", "name": "阜杭豆漿-經典飯糰"}, {"category": "台式飯糰", "name": "(金馬)阜杭豆漿-經典飯糰"}, {"category": "台式飯糰", "name": "米香-麻油雞雙菇飯糰"}, {"category": "台式飯糰", "name": "阜杭豆漿-里肌肉蛋紫米飯糰"}, {"category": "台式飯糰", "name": "(金)阜杭豆漿-里肌肉蛋紫米飯糰"}, {"category": "握便當", "name": "握便當-豪華秘製雙拼"}, {"category": "握便當", "name": "(金馬)握便當-豪華秘製雙拼"}, {"category": "握便當", "name": "晶華-四起司香草烤雞握便當"}, {"category": "握便當", "name": "(金馬)晶華-四起司香草烤雞握便當"}, {"category": "三明治", "name": "(區)雙倍起司火腿蛋三明治"}, {"category": "三明治", "name": "醬燒烤雞溏心蛋三明治"}, {"category": "三明治", "name": "溏心蛋紐奧良風味烤雞三明治"}, {"category": "三明治", "name": "金黃起司火腿蛋三明治"}, {"category": "三明治", "name": "日式雞蛋沙拉三明治"}, {"category": "三明治", "name": "燻雞菇菇彩蔬三明治"}, {"category": "漢堡", "name": "吉士豬肉堡加蛋"}, {"category": "漢堡", "name": "花生熔岩辣雞腿堡"}, {"category": "漢堡", "name": "牛肉起司堡"}, {"category": "漢堡", "name": "塔塔香炸鱈魚堡"}, {"category": "漢堡", "name": "雙層吉士豬肉堡加蛋"}, {"category": "捲餅", "name": "四起司燻腸捲餅"}, {"category": "便當燴飯", "name": "牛角-炙燒雙拼便當"}, {"category": "便當燴飯", "name": "(離)牛角-炙燒雙拼便當"}, {"category": "便當燴飯", "name": "日式佛蒙特咖哩雞肉飯"}, {"category": "便當燴飯", "name": "(離)日式佛蒙特咖哩雞肉飯"}, {"category": "便當燴飯", "name": "三起司肉醬焗飯"}, {"category": "便當燴飯", "name": "(離)三起司肉醬焗飯"}, {"category": "便當燴飯", "name": "晶華-府城肉燥厚切排骨飯"}, {"category": "便當燴飯", "name": "(離)晶華-府城肉燥厚切排骨飯"}, {"category": "便當燴飯", "name": "晶華-香烤魚排青醬燉飯"}, {"category": "便當燴飯", "name": "(離)晶華-香烤魚排青醬燉飯"}, {"category": "便當燴飯", "name": "歐姆蛋包飯"}, {"category": "便當燴飯", "name": "富錦樹-剝皮辣蝦滑蛋燴飯"}, {"category": "便當燴飯", "name": "極饗-奮起湖秘製滷排"}, {"category": "便當燴飯", "name": "(離)極饗-奮起湖秘製滷排"}, {"category": "便當燴飯", "name": "豆酥烤魚鮮蔬餐盒"}, {"category": "便當燴飯", "name": "(離)豆酥烤魚鮮蔬餐盒"}, {"category": "便當燴飯", "name": "極饗-真飽米糕炊粉大雙拼"}, {"category": "便當燴飯", "name": "(離)極饗-真飽米糕炊粉大雙拼"}];
+const productMaster = [{"category": "三角飯糰", "name": "雙蔬鮪魚飯糰"}, {"category": "三角飯糰", "name": "(金馬)雙蔬鮪魚飯糰"}, {"category": "三角飯糰", "name": "林聰明-雞肉飯飯糰"}, {"category": "三角飯糰", "name": "(金馬)林聰明-雞肉飯飯糰"}, {"category": "三角飯糰", "name": "御選肉鬆飯糰"}, {"category": "三角飯糰", "name": "(金馬)御選肉鬆飯糰"}, {"category": "三角飯糰", "name": "櫸木燻雞風味飯糰"}, {"category": "三角飯糰", "name": "(金馬)櫸木燻雞風味飯糰"}, {"category": "三角飯糰", "name": "炭火燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)炭火燒肉飯糰"}, {"category": "三角飯糰", "name": "炙烤鹽蔥燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)炙烤鹽蔥燒肉飯糰"}, {"category": "三角飯糰", "name": "魚卵龍蝦風味沙拉飯糰"}, {"category": "三角飯糰", "name": "(金馬)魚卵龍蝦風味沙拉飯糰"}, {"category": "三角飯糰", "name": "新極上飯糰-煙燻銀鮭"}, {"category": "三角飯糰", "name": "宗家府泡菜燒肉飯糰"}, {"category": "三角飯糰", "name": "(金馬)宗家府泡菜燒肉飯糰"}, {"category": "三角飯糰", "name": "哇沙米鮭魚飯糰"}, {"category": "三角飯糰", "name": "星級饗宴-晶英三杯蛤蠣飯糰"}, {"category": "三角飯糰", "name": "米香-鹹酥蝦飯糰"}, {"category": "三角飯糰", "name": "新極上飯糰-熟成明太子鮭魚"}, {"category": "三角飯糰", "name": "(金)新極上飯糰-熟成明太子鮭魚"}, {"category": "三角飯糰", "name": "新極上飯糰-天使紅蝦"}, {"category": "三角飯糰", "name": "(金馬)新極上飯糰-天使紅蝦"}, {"category": "三角飯糰", "name": "新極上飯糰-蔥鹽生鮭"}, {"category": "三角飯糰", "name": "(金馬)新極上飯糰-蔥鹽生鮭"}, {"category": "三角飯糰", "name": "潮粵坊-京醬鴨絲飯糰"}, {"category": "三角飯糰", "name": "(金馬)潮粵坊-京醬鴨絲飯糰"}, {"category": "三角飯糰", "name": "(區)新極上飯糰-冠軍烏魚子"}, {"category": "三角飯糰", "name": "(蔬)祥和塔香香鬆飯糰"}, {"category": "圓形", "name": "石安牧場溏心蛋飯糰(圓)"}, {"category": "圓形", "name": "(金馬)石安牧場溏心蛋飯糰(圓)"}, {"category": "圓形", "name": "炙燒明太子鮭魚飯糰(圓)"}, {"category": "壽司手卷", "name": "鮪魚肉鬆雙手卷"}, {"category": "壽司手卷", "name": "(金馬)鮪魚肉鬆雙手卷"}, {"category": "壽司手卷", "name": "阿拉斯加秋鮭鮪魚雙手卷"}, {"category": "壽司手卷", "name": "(金馬)阿拉斯加秋鮭鮪魚雙手卷"}, {"category": "壽司手卷", "name": "晶英-南蠻炸雞雙享壽司"}, {"category": "壽司手卷", "name": "(金馬)晶英-南蠻炸雞雙享壽司"}, {"category": "壽司手卷", "name": "日本豆皮壽司"}, {"category": "壽司手卷", "name": "(金馬)日本豆皮壽司"}, {"category": "壽司手卷", "name": "生鮭夾心壽司"}, {"category": "台式飯糰", "name": "星級饗宴-麻油雞飯糰"}, {"category": "台式飯糰", "name": "(金馬)星級饗宴-麻油雞飯糰"}, {"category": "台式飯糰", "name": "阜杭豆漿-經典飯糰"}, {"category": "台式飯糰", "name": "(金馬)阜杭豆漿-經典飯糰"}, {"category": "台式飯糰", "name": "米香-麻油雞雙菇飯糰"}, {"category": "台式飯糰", "name": "阜杭豆漿-里肌肉蛋紫米飯糰"}, {"category": "台式飯糰", "name": "(金)阜杭豆漿-里肌肉蛋紫米飯糰"}, {"category": "握便當", "name": "握便當-豪華秘製雙拼"}, {"category": "握便當", "name": "(金馬)握便當-豪華秘製雙拼"}, {"category": "握便當", "name": "晶華-四起司香草烤雞握便當"}, {"category": "握便當", "name": "(金馬)晶華-四起司香草烤雞握便當"}, {"category": "三明治", "name": "(區)雙倍起司火腿蛋三明治"}, {"category": "三明治", "name": "醬燒烤雞溏心蛋三明治"}, {"category": "三明治", "name": "溏心蛋紐奧良風味烤雞三明治"}, {"category": "三明治", "name": "金黃起司火腿蛋三明治"}, {"category": "三明治", "name": "日式雞蛋沙拉三明治"}, {"category": "三明治", "name": "燻雞菇菇彩蔬三明治"}, {"category": "三明治", "name": "檸檬卡士達綜合水果三明治"}, {"category": "漢堡", "name": "吉士豬肉堡加蛋"}, {"category": "漢堡", "name": "牛肉起司堡"}, {"category": "漢堡", "name": "塔塔香炸鱈魚堡"}, {"category": "漢堡", "name": "雙層吉士豬肉堡加蛋"}, {"category": "捲餅", "name": "四起司燻腸捲餅"}, {"category": "便當燴飯", "name": "牛角-炙燒雙拼便當"}, {"category": "便當燴飯", "name": "(離)牛角-炙燒雙拼便當"}, {"category": "便當燴飯", "name": "日式佛蒙特咖哩雞肉飯"}, {"category": "便當燴飯", "name": "(離)日式佛蒙特咖哩雞肉飯"}, {"category": "便當燴飯", "name": "晶華-香烤魚排青醬燉飯"}, {"category": "便當燴飯", "name": "歐姆蛋包飯"}, {"category": "便當燴飯", "name": "極饗-奮起湖秘製滷排"}, {"category": "便當燴飯", "name": "(離)極饗-奮起湖秘製滷排"}, {"category": "便當燴飯", "name": "豆酥烤魚鮮蔬餐盒"}, {"category": "便當燴飯", "name": "極饗-真飽米糕炊粉大雙拼"}, {"category": "便當燴飯", "name": "(離)極饗-真飽米糕炊粉大雙拼"}];
 const productCategories = ["三角飯糰", "圓形", "壽司手卷", "台式飯糰", "握便當", "三明治", "漢堡", "捲餅", "便當燴飯"];
 
 function initProductSelects(){
@@ -269,13 +270,36 @@ function updateProductOptions(){
   const current = prodSel.value;
   const list = productMaster.filter(p => p.category === cat);
   if(!cat){
-    prodSel.innerHTML = '<option value="">請先選擇類別</option>';
+    prodSel.innerHTML = '<option value="">請先選擇類別</option><option value="__CUSTOM__">自訂品名</option>';
+    toggleCustomProduct();
     return;
   }
   prodSel.innerHTML = '<option value="">請選擇品名</option>' + list.map(p =>
     `<option value="${escAttr(p.name)}">${esc(p.name)}</option>`
-  ).join('');
-  if(list.some(p => p.name === current)) prodSel.value = current;
+  ).join('') + '<option value="__CUSTOM__">自訂品名</option>';
+  if(list.some(p => p.name === current) || current === '__CUSTOM__') prodSel.value = current;
+  toggleCustomProduct();
+}
+
+function toggleCustomProduct(){
+  const prodSel = document.getElementById('product');
+  const custom = document.getElementById('customProduct');
+  if(!prodSel || !custom) return;
+  if(prodSel.value === '__CUSTOM__'){
+    custom.classList.remove('hidden');
+    custom.focus();
+  }else{
+    custom.classList.add('hidden');
+    custom.value = '';
+  }
+}
+
+function getSelectedProductName(){
+  const selected = val('product');
+  if(selected === '__CUSTOM__'){
+    return val('customProduct').trim();
+  }
+  return selected.trim();
 }
 
 const reasonCodes = [{"code": "236", "desc": "加工工時"}, {"code": "A00", "desc": "A類總工時"}, {"code": "A04", "desc": "成品移倉"}, {"code": "D01", "desc": "分攤起班準備_上班前"}, {"code": "D04", "desc": "結線清機_下班前"}, {"code": "D09", "desc": "生產備料"}, {"code": "E04", "desc": "試製(產)"}, {"code": "F01", "desc": "教育訓練_新人教育訓練"}, {"code": "F04", "desc": "整理整頓"}, {"code": "F10", "desc": "教育訓練_在職教育訓練"}, {"code": "F11", "desc": "開會"}, {"code": "F13", "desc": "跨廠支援"}, {"code": "F15", "desc": "支援/其他"}, {"code": "F19", "desc": "生產帶線"}, {"code": "B03", "desc": "重修品質異常產出"}, {"code": "C01", "desc": "等待前製程來料"}, {"code": "C02", "desc": "機故(已驗收設備)"}, {"code": "E01", "desc": "機故_非操作因素"}, {"code": "E05", "desc": "製程停頓(機故)(閒置)"}];
@@ -309,23 +333,29 @@ function escAttr(s){
 
 function pad(n){return String(n).padStart(2,'0')}
 function hour1(n){ return (Number(n || 0)).toFixed(1); }
+function time24(t){
+  if(!t) return '';
+  const parts = String(t).split(':');
+  const h = Number(parts[0] || 0);
+  const m = Number(parts[1] || 0);
+  return `${pad(h)}:${pad(m)}`;
+}
+function capacity1(qty, mins){
+  const q = Number(qty || 0);
+  const m = Number(mins || 0);
+  if(q <= 0 || m <= 0) return '';
+  return Math.round((q / (m / 60)) * 10) / 10;
+}
 function todayStr(){
   const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 }
-function roundTo6Minute(minute){
-  let m = Math.round(Number(minute || 0) / 6) * 6;
-  if(m >= 60) m = 54;
-  return m;
-}
-
 function timeStr(){
-  const d=new Date();
-  return `${pad(d.getHours())}:${pad(roundTo6Minute(d.getMinutes()))}`;
+  const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function initTimeSelects(){
   const hours = Array.from({length:24}, (_,i)=>pad(i));
-  const mins = [0,6,12,18,24,30,36,42,48,54].map(pad);
+  const mins = Array.from({length:60}, (_,i)=>pad(i));
 
   ['start','end'].forEach(prefix => {
     const h = document.getElementById(prefix + 'Hour');
@@ -347,7 +377,7 @@ function setTimeSelect(prefix, value){
   if(!value) return;
   const [h, m] = value.split(':');
   const hh = pad(Number(h));
-  const mm = pad(roundTo6Minute(Number(m)));
+  const mm = pad(Number(m));
   const hSel = document.getElementById(prefix + 'Hour');
   const mSel = document.getElementById(prefix + 'Minute');
   const t = document.getElementById(prefix + 'Time');
@@ -357,7 +387,7 @@ function setTimeSelect(prefix, value){
 }
 
 function updateClock(){
-  const d = new Date();
+  const d=new Date();
   document.getElementById('clock').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 setInterval(updateClock,1000); updateClock();
@@ -379,13 +409,12 @@ function minutesBetween(start,end){
 function updateLivePph(){
   const start = val('startTime');
   const end = val('endTime');
-  const people = Number(val('people') || 0);
   const qty = Number(val('qty') || 0);
   const box = document.getElementById('livePphBox');
   if(!box) return;
 
   if(!start || !end){
-    box.innerHTML = '即時人均：請先按開始與結束。';
+    box.innerHTML = '即時每小時產能：請先按開始與結束。';
     return;
   }
 
@@ -393,39 +422,40 @@ function updateLivePph(){
   const hour = Math.round((mins / 60) * 10) / 10;
 
   if(mins <= 0){
-    box.innerHTML = '<b style="color:#dc2626;">即時人均：時間異常</b><br>請確認開始與結束時間。';
+    box.innerHTML = '<b style="color:#dc2626;">即時每小時產能：時間異常</b><br>請確認開始與結束時間。';
     return;
   }
 
-  if(people <= 0 || qty <= 0){
-    box.innerHTML = `即時人均：待計算<br>作業時間：${mins} 分鐘（${hour} 小時）｜請確認人數與生產數量。`;
+  if(qty <= 0){
+    box.innerHTML = `即時每小時產能：待計算<br>作業時間：${mins} 分鐘（${hour.toFixed(1)} 小時）｜請輸入生產數量。`;
     return;
   }
 
-  const pph = Math.round((qty / (people * (mins / 60))) * 10) / 10;
+  const capacity = Math.round((qty / (mins / 60)) * 10) / 10;
   let warn = '';
-  if(pph <= 0){
-    warn = '<br><b style="color:#dc2626;">提醒：人均為 0，請確認資料。</b>';
-  }else if(pph > 1000){
-    warn = '<br><b style="color:#dc2626;">提醒：人均偏高，請確認人數、數量或時間是否輸入錯誤。</b>';
-  }else if(pph < 50){
-    warn = '<br><b style="color:#f59e0b;">提醒：人均偏低，請確認是否為非生產或資料輸入錯誤。</b>';
+  if(capacity <= 0){
+    warn = '<br><b style="color:#dc2626;">提醒：每小時產能為 0，請確認資料。</b>';
+  }else if(capacity > 5000){
+    warn = '<br><b style="color:#dc2626;">提醒：每小時產能偏高，請確認數量或時間是否輸入錯誤。</b>';
+  }else if(capacity < 100){
+    warn = '<br><b style="color:#f59e0b;">提醒：每小時產能偏低，請確認是否為非生產或資料輸入錯誤。</b>';
   }
 
-  box.innerHTML = `<b style="font-size:20px;color:#1d4ed8;">即時人均：${pph} PCS/H</b><br>作業時間：${mins} 分鐘（${hour} 小時）｜生產數量：${qty}｜人數：${people}${warn}`;
+  box.innerHTML = `<b style="font-size:20px;color:#1d4ed8;">即時每小時產能：${capacity} PCS/H</b><br>作業時間：${mins} 分鐘（${hour.toFixed(1)} 小時）｜生產數量：${qty}${warn}`;
 }
+
 
 function addRecord(){
   const workDate = val('workDate'), line=val('line');
-  const category=val('category'), product=val('product').trim(), start=val('startTime'), end=val('endTime');
+  const category=val('category'), product=getSelectedProductName(), start=val('startTime'), end=val('endTime');
   const people=Number(val('people')||0), qty=Number(val('qty')||0), note=val('note').trim();
   const task=val('task') || 'N', overtime=val('overtime') || 'N', machineQty=Number(val('machineQty')||1);
   const nonProd01=val('nonProd01').trim(), nonProdHour01=Number(val('nonProdHour01')||0);
   const nonProd02=val('nonProd02').trim(), nonProdHour02=Number(val('nonProdHour02')||0);
   const nonProd03=val('nonProd03').trim(), nonProdHour03=Number(val('nonProdHour03')||0);
 
-  if(!workDate || !line || !start || !end){
-    alert('請確認：日期、線別、開始時間、結束時間都已填寫。');
+  if(!workDate || !line || !product || !start || !end){
+    alert('請確認：日期、線別、品名、開始時間、結束時間都已填寫。');
     return;
   }
   const mins = minutesBetween(start,end);
@@ -435,11 +465,12 @@ function addRecord(){
   const productionHour = hour;
   const nonProduction01 = nonProd01;
   const pph = (people>0 && hour>0 && qty>0) ? Math.round((qty/(people*hour))*10)/10 : '';
+  const capacity = (hour>0 && qty>0) ? Math.round((qty/hour)*10)/10 : '';
 
   records.push({
     workDate,line,category,product,people,qty,task,overtime,machineQty,
     machineHour,productionHour,nonProduction01,nonProdHour01,nonProd02,nonProdHour02,nonProd03,nonProdHour03,
-    manHour,start,end,pph,note,mins,hour
+    manHour,start,end,capacity,pph,note,mins,hour
   });
   saveData(false);
   render();
@@ -471,6 +502,7 @@ function clearForm(){
   document.getElementById('category').value='';
   updateProductOptions();
   document.getElementById('product').value='';
+  const cp = document.getElementById('customProduct'); if(cp){ cp.value=''; cp.classList.add('hidden'); }
   document.getElementById('people').value='';
   document.getElementById('qty').value='';
   document.getElementById('task').value='N';
@@ -502,7 +534,7 @@ function render(){
       <td>${i+1}</td><td>${esc(r.workDate)}</td><td>${esc(r.product)}</td>
       <td>${r.people ?? ''}</td><td>${r.qty ?? ''}</td><td>${esc(r.task || 'N')}</td><td>${esc(r.overtime || 'N')}</td>
       <td>${r.machineQty ?? ''}</td><td>${hour1(r.machineHour)}</td><td>${hour1(r.productionHour)}</td>
-      <td>${esc(r.nonProduction01 || '')}</td><td>${r.nonProdHour01 ?? ''}</td><td>${esc(r.nonProd02 || '')}</td><td>${r.nonProdHour02 ?? ''}</td><td>${esc(r.nonProd03 || '')}</td><td>${r.nonProdHour03 ?? ''}</td><td>${r.manHour ?? ''}</td><td>${esc(r.start)}</td><td>${esc(r.end)}</td><td>${r.pph ?? ''}</td>
+      <td>${esc(r.nonProduction01 || '')}</td><td>${r.nonProdHour01 ?? ''}</td><td>${esc(r.nonProd02 || '')}</td><td>${r.nonProdHour02 ?? ''}</td><td>${esc(r.nonProd03 || '')}</td><td>${r.nonProdHour03 ?? ''}</td><td>${r.manHour ?? ''}</td><td>${esc(time24(r.start))}</td><td>${esc(time24(r.end))}</td><td>${r.capacity ?? capacity1(r.qty, r.mins)}</td><td>${r.pph ?? ''}</td>
       <td>${esc(r.note)}</td>
       <td><button class="danger" onclick="deleteRecord(${i})">刪除</button></td>`;
     tbody.appendChild(tr);
@@ -533,7 +565,7 @@ function deleteRecord(i){
 }
 
 function headers(){
-  return ['日期','品名','人數','生產數量','課務','加班','機器數量','機器工時','生產工時','非生產01','工時01','非生產02','工時02','非生產03','工時03','工時','起','訖','人均'];
+  return ['日期','品名','人數','生產數量','課務','加班','機器數量','機器工時','生產工時','非生產01','工時01','非生產02','工時02','非生產03','工時03','工時','起','訖','產能','人均'];
 }
 function rowArray(r){
   return [
@@ -543,7 +575,7 @@ function rowArray(r){
     r.nonProduction01 || '', r.nonProdHour01 || '',
     r.nonProd02 || '', r.nonProdHour02 || '',
     r.nonProd03 || '', r.nonProdHour03 || '',
-    r.manHour || '', r.start, r.end, r.pph || ''
+    r.manHour || '', time24(r.start), time24(r.end), r.capacity || capacity1(r.qty, r.mins), r.pph || ''
   ];
 }
 
@@ -612,6 +644,7 @@ function normalizeRecord(r){
     nonProd03: r.nonProd03 ?? '',
     nonProdHour03: r.nonProdHour03 ?? '',
     manHour: r.manHour ?? Math.round(hour*people*10)/10,
+    capacity: r.capacity ?? ((hour>0 && qty>0) ? Math.round((qty/hour)*10)/10 : ''),
     pph: r.pph ?? ((people>0 && hour>0 && qty>0) ? Math.round((qty/(people*hour))*10)/10 : ''),
     mins,
     hour
